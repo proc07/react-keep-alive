@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html style="scroll-behavior: smooth">
+<head>
+<style>
+  .box { width: 100px; height: 100px; overflow: auto; scroll-behavior: smooth; }
+  .content { width: 200px; height: 200px; }
+</style>
+</head>
+<body>
+<div class="box" id="b1"><div class="content"></div></div>
+<script>
+  const b1 = document.getElementById('b1');
+  b1.scrollTo({ top: 50, behavior: 'instant' });
+</script>
+</body>
+</html>

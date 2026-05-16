@@ -1,0 +1,8 @@
+src/
+demo/
+coverage/
+.gitignore
+tsconfig.json
+rollup.config.mjs
+vitest.config.ts
+*.tsbuildinfo

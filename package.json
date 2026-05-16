@@ -1,5 +1,5 @@
 {
-  "name": "react-keep-alive",
+  "name": "react-keep-alive-max",
   "version": "1.0.1",
   "description": "A Vue-like KeepAlive component for React 18/19 — cache component state, avoid re-renders on switch, boost performance.",
   "main": "dist/index.cjs.js",

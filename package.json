@@ -1,6 +1,6 @@
 {
   "name": "react-keep-alive-max",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A Vue-like KeepAlive component for React 18/19 — cache component state, avoid re-renders on switch, boost performance.",
   "main": "dist/index.cjs.js",
   "module": "dist/index.esm.js",
@@ -75,6 +75,10 @@
   },
   "repository": {
     "type": "git",
-    "url": ""
-  }
+    "url": "git+https://github.com/proc07/react-keep-alive.git"
+  },
+  "bugs": {
+    "url": "https://github.com/proc07/react-keep-alive/issues"
+  },
+  "homepage": "https://github.com/proc07/react-keep-alive#readme"
 }

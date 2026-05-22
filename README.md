@@ -1,4 +1,4 @@
-# react-keep-alive-max-max
+# react-keep-alive-max
 
 > 类 Vue `<keep-alive>` 的 React 18/19 组件缓存插件 — 缓存组件状态，避免切换时重新渲染销毁，提升性能。
 

@@ -1,8 +1,8 @@
-# react-keep-alive
+# react-keep-alive-max-max
 
 > 类 Vue `<keep-alive>` 的 React 18/19 组件缓存插件 — 缓存组件状态，避免切换时重新渲染销毁，提升性能。
 
-[![npm version](https://img.shields.io/npm/v/react-keep-alive)](https://www.npmjs.com/package/react-keep-alive)
+[![npm version](https://img.shields.io/npm/v/react-keep-alive-max)](https://www.npmjs.com/package/react-keep-alive-max)
 [![React](https://img.shields.io/badge/React-18%20%7C%2019-blue)](https://reactjs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-ready-blue)](https://www.typescriptlang.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
@@ -21,11 +21,11 @@
 ## 安装
 
 ```bash
-npm install react-keep-alive
+npm install react-keep-alive-max
 # 或
-pnpm add react-keep-alive
+pnpm add react-keep-alive-max
 # 或
-yarn add react-keep-alive
+yarn add react-keep-alive-max
 ```
 
 ## 快速上手
@@ -33,7 +33,7 @@ yarn add react-keep-alive
 ### 基础用法
 
 ```tsx
-import { KeepAliveScope, KeepAlive } from 'react-keep-alive';
+import { KeepAliveScope, KeepAlive } from 'react-keep-alive-max';
 
 function App() {
   const [tab, setTab] = useState('home');
@@ -65,7 +65,7 @@ function App() {
 ### 生命周期钩子
 
 ```tsx
-import { useActivated, useDeactivated } from 'react-keep-alive';
+import { useActivated, useDeactivated } from 'react-keep-alive-max';
 
 function ListPage() {
   const [data, setData] = useState([]);
@@ -89,7 +89,7 @@ function ListPage() {
 ### 手动控制缓存
 
 ```tsx
-import { useKeepAliveContext } from 'react-keep-alive';
+import { useKeepAliveContext } from 'react-keep-alive-max';
 
 function AdminPanel() {
   const { drop, refresh, getCacheKeys, activeKey } = useKeepAliveContext();
@@ -112,8 +112,8 @@ function AdminPanel() {
 ### React Router 集成
 
 ```tsx
-import { KeepAliveScope } from 'react-keep-alive';
-import { KeepAliveRouteOutlet } from 'react-keep-alive/router';
+import { KeepAliveScope } from 'react-keep-alive-max';
+import { KeepAliveRouteOutlet } from 'react-keep-alive-max/router';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
 function Layout() {
@@ -156,22 +156,24 @@ function App() {
 
 顶层 Provider，必须包裹在所有 `<KeepAlive>` 外层。
 
-| Prop | 类型 | 默认值 | 说明 |
-|------|------|--------|------|
-| `max` | `number` | `10` | 最大缓存组件数量 |
-| `strategy` | `'LRU' \| 'FIFO'` | `'LRU'` | 缓存淘汰策略 |
+
+| Prop       | 类型             | 默认值  | 说明             |
+| ---------- | ---------------- | ------- | ---------------- |
+| `max`      | `number`         | `10`    | 最大缓存组件数量 |
+| `strategy` | `'LRU' | 'FIFO'` | `'LRU'` | 缓存淘汰策略     |
 
 ### `<KeepAlive>`
 
 核心缓存组件。
 
-| Prop | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| `cacheKey` | `string` | ✅ | 缓存唯一标识 |
-| `include` | `string[] \| RegExp` | — | 白名单：只有匹配的 key 才缓存 |
-| `exclude` | `string[] \| RegExp` | — | 黑名单：匹配的 key 不缓存（优先级更高） |
-| `onActivated` | `() => void` | — | 激活时回调 |
-| `onDeactivated` | `() => void` | — | 停用时回调 |
+
+| Prop            | 类型                | 必填 | 说明                                    |
+| --------------- | ------------------- | ---- | --------------------------------------- |
+| `cacheKey`      | `string`            | ✅   | 缓存唯一标识                            |
+| `include`       | `string[] | RegExp` | —   | 白名单：只有匹配的 key 才缓存           |
+| `exclude`       | `string[] | RegExp` | —   | 黑名单：匹配的 key 不缓存（优先级更高） |
+| `onActivated`   | `() => void`        | —   | 激活时回调                              |
+| `onDeactivated` | `() => void`        | —   | 停用时回调                              |
 
 ### `useActivated(callback)`
 
@@ -194,17 +196,18 @@ interface KeepAliveControls {
 }
 ```
 
-### `<KeepAliveRouteOutlet>`（`react-keep-alive/router`）
+### `<KeepAliveRouteOutlet>`（`react-keep-alive-max/router`）
 
 替代 `<Outlet>` 的路由缓存组件，兼容 react-router-dom v6 / v7。
 
-| Prop | 类型 | 说明 |
-|------|------|------|
-| `cacheKey` | `(pathname, search) => string` | 自定义 key 生成函数，默认使用 `pathname` |
-| `include` | `string[] \| RegExp` | 缓存白名单 |
-| `exclude` | `string[] \| RegExp` | 缓存黑名单 |
-| `onActivated` | `(key: string) => void` | 路由激活回调 |
-| `onDeactivated` | `(key: string) => void` | 路由停用回调 |
+
+| Prop            | 类型                           | 说明                                    |
+| --------------- | ------------------------------ | --------------------------------------- |
+| `cacheKey`      | `(pathname, search) => string` | 自定义 key 生成函数，默认使用`pathname` |
+| `include`       | `string[] | RegExp`            | 缓存白名单                              |
+| `exclude`       | `string[] | RegExp`            | 缓存黑名单                              |
+| `onActivated`   | `(key: string) => void`        | 路由激活回调                            |
+| `onDeactivated` | `(key: string) => void`        | 路由停用回调                            |
 
 ## 实现原理
 
@@ -257,11 +260,12 @@ interface KeepAliveControls {
 
 这与 `display: none` 的本质区别：
 
-| | `display: none` | 本库（DOM 搬运） |
-|---|---|---|
-| 布局影响 | ❌ 隐藏组件仍占 flex/grid 位 | ✅ 完全移出文档流 |
-| 滚动位置 | ⚠️ 部分场景丢失 | ✅ 天然保留（DOM 节点未销毁） |
-| React Fiber | ✅ 保留 | ✅ 保留（Portal） |
+
+|             | `display: none`              | 本库（DOM 搬运）              |
+| ----------- | ---------------------------- | ----------------------------- |
+| 布局影响    | ❌ 隐藏组件仍占 flex/grid 位 | ✅ 完全移出文档流             |
+| 滚动位置    | ⚠️ 部分场景丢失            | ✅ 天然保留（DOM 节点未销毁） |
+| React Fiber | ✅ 保留                      | ✅ 保留（Portal）             |
 
 ---
 
@@ -290,6 +294,7 @@ KeepAlive 激活时：
 ```
 
 **这样设计的好处：**
+
 - 不需要手动清理监听器，组件销毁自动清理
 - 不受 React StrictMode 双重调用影响
 - 与 React 的渲染时序完全对齐（layoutEffect 在 DOM 变更后同步执行）
@@ -393,26 +398,25 @@ FIFO（先进先出）：
             → React Fiber 销毁，内存释放 ✅
 ```
 
-
-
 ## 与同类方案对比
 
 市面上主流的 React 缓存方案大致分为两类，各有不同的实现路线和权衡：
 
 ### 整体对比
 
-| 维度 | **本库** | react-activation | keepalive-for-react |
-|---|---|---|---|
-| React 版本兼容 | ✅ 18 / 19 原生 | ⚠️ R18 部分兼容，R19 不稳定 | ✅ 18 / 19 |
-| 实现原理 | Portal + DOM 搬运 | Fiber 内部 hack | Portal + CSS 隐藏 |
-| React 内部 API | ✅ 全公开 API | ❌ 使用私有 Fiber 字段 | ✅ 公开 API |
-| Concurrent Mode | ✅ 完全兼容 | ⚠️ 存在问题 | ✅ 兼容 |
-| 布局影响 | ✅ 无（物理移出） | ✅ 无 | ❌ 占位 |
-| 生命周期钩子 | ✅ 响应式传播 | ✅ 支持 | ⚠️ 较弱 |
-| React Router v6 | ✅ 原生集成 | ⚠️ 需要额外配置 | ✅ 支持 |
-| TypeScript | ✅ 完整 | ⚠️ 部分 | ✅ 完整 |
-| 零依赖 | ✅ | ❌ | ✅ |
-| 包大小 | ~5KB | ~15KB | ~8KB |
+
+| 维度            | **本库**          | react-activation              | keepalive-for-react |
+| --------------- | ----------------- | ----------------------------- | ------------------- |
+| React 版本兼容  | ✅ 18 / 19 原生   | ⚠️ R18 部分兼容，R19 不稳定 | ✅ 18 / 19          |
+| 实现原理        | Portal + DOM 搬运 | Fiber 内部 hack               | Portal + CSS 隐藏   |
+| React 内部 API  | ✅ 全公开 API     | ❌ 使用私有 Fiber 字段        | ✅ 公开 API         |
+| Concurrent Mode | ✅ 完全兼容       | ⚠️ 存在问题                 | ✅ 兼容             |
+| 布局影响        | ✅ 无（物理移出） | ✅ 无                         | ❌ 占位             |
+| 生命周期钩子    | ✅ 响应式传播     | ✅ 支持                       | ⚠️ 较弱           |
+| React Router v6 | ✅ 原生集成       | ⚠️ 需要额外配置             | ✅ 支持             |
+| TypeScript      | ✅ 完整           | ⚠️ 部分                     | ✅ 完整             |
+| 零依赖          | ✅                | ❌                            | ✅                  |
+| 包大小          | ~5KB              | ~15KB                         | ~8KB                |
 
 ---
 
@@ -452,11 +456,11 @@ keepalive-for-react 的隐藏方式：
 ```
 
 `display: none` 的方案存在两个问题：
+
 1. **布局污染**：隐藏容器仍然参与 CSS Stacking Context 计算，影响 `z-index`、`overflow` 等属性
 2. **滚动位置**：部分浏览器在 `display: none` 时会重置 `scrollTop`
 
 本库的 DOM 物理搬运彻底规避了这两个问题。
-
 
 ### 本库解决的独特问题
 
@@ -471,7 +475,6 @@ keepalive-for-react 的隐藏方式：
 如果用 `useEffect([children]) → setCaches` 同步子组件 props 变化，当父组件读取了 KeepAlive context（如展示缓存状态面板），会形成：`setCaches → context 更新 → 父组件重渲染 → 新 children 引用 → useEffect 再触发` 的死循环。本库通过直接 mutation `entry.element`（不触发 setState）打破循环（详见「实现原理」第 4 节）。
 
 ## 注意事项
-
 
 - ⚠️ **不要与 `React.StrictMode` 同时使用**（StrictMode 双重渲染会干扰缓存逻辑）
 - ⚠️ **`cacheKey` 必须唯一且稳定**，避免使用随机值

@@ -52,6 +52,7 @@ export interface KeepAliveContextValue {
   refresh: (key: string) => void;
   activeKey: string | null;
   setActiveKey: React.Dispatch<React.SetStateAction<string | null>>;
+  activeKeyRef: React.MutableRefObject<{ key: string; location: any } | null>;
   /** cacheKey → 'active' | 'inactive' | 'init'，驱动 Portal children 重新渲染 */
   statusMap: Map<string, 'active' | 'inactive' | 'init'>;
   setStatusMap: React.Dispatch<React.SetStateAction<Map<string, 'active' | 'inactive' | 'init'>>>;

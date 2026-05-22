@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { useActivated } from 'react-keep-alive';
+import React, { use, useState } from 'react';
+import { useActivated, useKeepAliveContext } from 'react-keep-alive';
+import { useLocation } from 'react-router-dom';
 
 /**
  * Form Page
@@ -9,6 +10,9 @@ import { useActivated } from 'react-keep-alive';
  * - 包含文本、选择框、评分、多行文本等多种控件
  */
 export default function FormPage() {
+  const location = useLocation();
+  const {drop} = useKeepAliveContext();
+  
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [company, setCompany] = useState('');
@@ -18,7 +22,7 @@ export default function FormPage() {
   const [newsletter, setNewsletter] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [activatedCount, setActivatedCount] = useState(0);
-  console.log('FormPage render');
+  console.log('FormPage render',location.pathname);
   useActivated(() => {
     setActivatedCount((c) => c + 1);
   });

@@ -5,6 +5,8 @@ import { KeepAliveScope } from '../KeepAliveScope';
 import { KeepAlive } from '../KeepAlive';
 import { useActivated } from '../hooks/useActivated';
 import { useDeactivated } from '../hooks/useDeactivated';
+import { MemoryRouter, useLocation, Routes, Route, useNavigate } from 'react-router-dom';
+import { useKeepAliveContext } from '../hooks/useKeepAliveContext';
 
 // ─── Helper ───────────────────────────────────────────────────────────────────
 
@@ -170,5 +172,133 @@ describe('render counts', () => {
     // Verify it still rendered exactly 1 time! (No extra re-render on deactivation)
     expect(renderCount).toBe(1);
   });
+
+  it('does not re-render inactive components when location or keep-alive context changes', async () => {
+    let renderCount = 0;
+
+    function TestPage() {
+      const location = useLocation();
+      const keepAlive = useKeepAliveContext();
+      renderCount++;
+      console.log('--- TestPage Render #' + renderCount + ' ---', {
+        pathname: location.pathname,
+        activeKey: keepAlive.activeKey
+      });
+      console.log(new Error().stack);
+      return (
+        <div>
+          Page: {location.pathname}
+          ActiveKey: {keepAlive.activeKey}
+        </div>
+      );
+    }
+
+    function App() {
+      const navigate = useNavigate();
+      return (
+        <KeepAliveScope>
+          <button data-testid="to-form" onClick={() => navigate('/form')}>Form</button>
+          <button data-testid="to-list" onClick={() => navigate('/list')}>List</button>
+          <Routes>
+            <Route
+              path="/form"
+              element={
+                <KeepAlive cacheKey="/form">
+                  <TestPage />
+                </KeepAlive>
+              }
+            />
+            <Route
+              path="/list"
+              element={
+                <KeepAlive cacheKey="/list">
+                  <div>List Page</div>
+                </KeepAlive>
+              }
+            />
+          </Routes>
+        </KeepAliveScope>
+      );
+    }
+
+    const { getByTestId } = render(
+      <MemoryRouter initialEntries={['/form']}>
+        <App />
+      </MemoryRouter>
+    );
+
+    // Initial render of TestPage on /form
+    expect(renderCount).toBe(1);
+
+    // Switch to /list
+    fireEvent.click(getByTestId('to-list'));
+    
+    // Wait for route and status updates to propagate
+    await new Promise((r) => setTimeout(r, 50));
+
+    // Verify it deactivated, and since it is inactive, it should NOT have re-rendered again!
+    // If it was not shadowed, it would have re-rendered because:
+    // 1. location changed from /form to /list
+    // 2. activeKey in KeepAliveContext changed from /form to /list
+    expect(renderCount).toBe(1);
+  });
+
+  it('does not re-render inactive components when navigating to a non-keep-alive route', async () => {
+    let renderCount = 0;
+
+    function TestPage() {
+      const location = useLocation();
+      renderCount++;
+      console.log('--- Non-KA TestPage Render #' + renderCount + ' ---', {
+        pathname: location.pathname
+      });
+      return <div>Page: {location.pathname}</div>;
+    }
+
+    function App() {
+      const navigate = useNavigate();
+      return (
+        <KeepAliveScope>
+          <button data-testid="to-form" onClick={() => navigate('/form')}>Form</button>
+          <button data-testid="to-non-ka" onClick={() => navigate('/non-ka')}>Non-KA</button>
+          <Routes>
+            <Route
+              path="/form"
+              element={
+                <KeepAlive cacheKey="/form">
+                  <TestPage />
+                </KeepAlive>
+              }
+            />
+            <Route
+              path="/non-ka"
+              element={
+                <div>Non-KeepAlive Page</div>
+              }
+            />
+          </Routes>
+        </KeepAliveScope>
+      );
+    }
+
+    const { getByTestId } = render(
+      <MemoryRouter initialEntries={['/form']}>
+        <App />
+      </MemoryRouter>
+    );
+
+    // Initial render of TestPage on /form
+    expect(renderCount).toBe(1);
+
+    // Switch to /non-ka (which is not a KeepAlive route)
+    fireEvent.click(getByTestId('to-non-ka'));
+    
+    // Wait for route and status updates to propagate
+    await new Promise((r) => setTimeout(r, 50));
+
+    // Verify it did NOT trigger a re-render of the inactive TestPage (Form)
+    expect(renderCount).toBe(1);
+  });
 });
+
 

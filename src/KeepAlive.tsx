@@ -3,6 +3,7 @@ import React, {
   useEffect,
   useLayoutEffect,
   useCallback,
+  useContext,
   type ReactElement,
   type ReactNode,
 } from 'react';
@@ -11,6 +12,10 @@ import { KeepAliveItemContext } from './KeepAliveItemContext';
 import { setupScrollTracker, saveScrollState, restoreScrollState } from './scroll';
 import type { KeepAliveProps, CacheEntry } from './types';
 import { keepAliveEventBus } from './eventBus';
+import { UNSAFE_LocationContext } from 'react-router-dom';
+
+const dummyContext = React.createContext<any>(null);
+const locCtx = UNSAFE_LocationContext || dummyContext;
 
 const useIsomorphicLayoutEffect =
   typeof window !== 'undefined' ? useLayoutEffect : useEffect;
@@ -36,6 +41,7 @@ export function KeepAlive({
     setCaches,
     setActiveKey,
     setStatusMap,
+    activeKeyRef,
   } = useKeepAliveContextInternal();
 
   const placeholderRef = useRef<HTMLDivElement>(null);
@@ -165,6 +171,11 @@ export function KeepAlive({
   }, [cacheKey]);
 
   // ── Render ───────────────────────────────────────────────────────────────
+  const currentLoc = useContext(locCtx);
+  if (shouldCache()) {
+    activeKeyRef.current = { key: cacheKey, location: currentLoc?.location };
+  }
+
   if (!shouldCache()) {
     return (
       <KeepAliveItemContext.Provider value={{ cacheKey }}>

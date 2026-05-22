@@ -1,17 +1,20 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
-  BrowserRouter,
-  Routes,
-  Route,
+  createBrowserRouter,
+  RouterProvider,
   NavLink,
   useLocation,
 } from 'react-router-dom';
-import { KeepAliveScope, useKeepAliveContext } from 'react-keep-alive';
-import { KeepAliveRouteOutlet } from 'react-keep-alive/router';
+import { KeepAliveScope, useKeepAliveContext, KeepAliveRouteOutlet } from 'react-keep-alive';
 import Counter from './pages/Counter';
 import FormPage from './pages/Form';
 import ListPage from './pages/List';
 import ScrollPage from './pages/Scroll';
+import NestedLayout from './pages/nested/NestedLayout';
+import SettingsLayout from './pages/nested/SettingsLayout';
+import Dashboard from './pages/nested/Dashboard';
+import ProfilePage from './pages/nested/ProfilePage';
+import SecurityPage from './pages/nested/SecurityPage';
 
 // ─── Navigation config ────────────────────────────────────────────────────────
 
@@ -20,6 +23,7 @@ const NAV_LINKS = [
   { to: '/form',   label: '表单',   icon: '📝', exact: false },
   { to: '/list',   label: '列表',   icon: '📋', exact: false },
   { to: '/scroll', label: '滚动',   icon: '🖱️', exact: false },
+  { to: '/nested', label: '嵌套路由', icon: '🗂', exact: false },
 ];
 
 // ─── Cache Status Panel ───────────────────────────────────────────────────────
@@ -74,9 +78,23 @@ function CacheStatusPanel() {
 
 // ─── Layout (wraps all routes) ────────────────────────────────────────────────
 
+const NESTED_PREFIX = '/nested';
+const NESTED_STORAGE_KEY = 'lastNestedPath';
+const NESTED_DEFAULT = '/nested/dashboard';
+
 function Layout() {
   const { activeKey } = useKeepAliveContext();
   const location = useLocation();
+
+  // 每次进入 /nested/* 子路由时，把当前完整路径存入 localStorage
+  useEffect(() => {
+    if (location.pathname.startsWith(NESTED_PREFIX + '/')) {
+      localStorage.setItem(NESTED_STORAGE_KEY, location.pathname);
+    }
+  }, [location.pathname]);
+
+  // 读取上次访问的嵌套路径（首次默认跳到 dashboard）
+  const lastNestedPath = localStorage.getItem(NESTED_STORAGE_KEY) ?? NESTED_DEFAULT;
 
   return (
     <div className="app">
@@ -102,17 +120,32 @@ function Layout() {
       {/* Tab Navigation — 使用 NavLink，URL 驱动 */}
       <nav className="nav">
         <div className="nav-inner">
-          {NAV_LINKS.map((link) => (
-            <NavLink
-              key={link.to}
-              to={link.to}
-              end={link.exact}
-              className={({ isActive }) => `nav-tab ${isActive ? 'active' : ''}`}
-            >
-              <span className="tab-icon">{link.icon}</span>
-              {link.label}
-            </NavLink>
-          ))}
+          {NAV_LINKS.map((link) => {
+            // 嵌套路由 Tab：to 指向上次访问的子路径，active 判断只要在 /nested/* 内即高亮
+            const isNested = link.to === NESTED_PREFIX;
+            const to = isNested ? lastNestedPath : link.to;
+            return (
+              <NavLink
+                key={link.to}
+                to={to}
+                end={!isNested && link.exact}
+                className={({ isActive }) =>
+                  `nav-tab ${
+                    isNested
+                      ? location.pathname.startsWith(NESTED_PREFIX)
+                        ? 'active'
+                        : ''
+                      : isActive
+                      ? 'active'
+                      : ''
+                  }`
+                }
+              >
+                <span className="tab-icon">{link.icon}</span>
+                {link.label}
+              </NavLink>
+            );
+          })}
         </div>
       </nav>
 
@@ -127,34 +160,53 @@ function Layout() {
             组件状态（计数值、表单输入、列表滚动）均会被 KeepAlive 缓存。
           </div>
 
-          {/* KeepAliveRouteOutlet 替代 <Outlet />，自动缓存每个路由 */}
-          <KeepAliveRouteOutlet
-            exclude={['/login', '/register']}
-            onActivated={(key) => console.log('[KeepAlive] activated:', key)}
-            onDeactivated={(key) => console.log('[KeepAlive] deactivated:', key)}
-          />
+          {/* 使用 KeepAliveRouteOutlet，各子路由的缓存行为由其 route handle 控制 */}
+          <KeepAliveRouteOutlet />
         </div>
       </main>
     </div>
   );
 }
 
-// ─── Root App ─────────────────────────────────────────────────────────────────
+// ─── Route Config（useRoutes 配置对象）────────────────────────────────────────
+
+const routeConfig = [
+  {
+    path: '/',
+    element: (
+      <KeepAliveScope max={10} strategy="LRU">
+        <Layout />
+      </KeepAliveScope>
+    ),
+    children: [
+      // 一级页面
+      { index: true,      element: <Counter /> },
+      { path: 'form',     element: <FormPage />, handle: { isKeepalive: true } },
+      { path: 'list',     element: <ListPage /> },
+      { path: 'scroll',   element: <ScrollPage />, handle: { isKeepalive: true } },
+      // ── 三级嵌套路由 ──────────────────────────────────────────
+      {
+        path: 'nested',
+        element: <NestedLayout />,        // Level 1 Layout（含 Outlet）
+        handle: { isKeepalive: true },
+        children: [
+          { path: 'dashboard', element: <Dashboard /> },
+          {
+            path: 'settings',
+            element: <SettingsLayout />,  // Level 2 Layout（含 Outlet）
+            children: [
+              { path: 'profile',  element: <ProfilePage /> },
+              { path: 'security', element: <SecurityPage /> },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+];
+
+const router = createBrowserRouter(routeConfig);
 
 export default function App() {
-  return (
-    <KeepAliveScope max={10} strategy="LRU">
-      <BrowserRouter>
-        <Routes>
-          {/* Layout 作为外层路由，所有子路由通过 KeepAliveRouteOutlet 渲染 */}
-          <Route path="/" element={<Layout />}>
-            <Route index element={<Counter />} />
-            <Route path="form" element={<FormPage />} />
-            <Route path="list" element={<ListPage />} />
-            <Route path="scroll" element={<ScrollPage />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </KeepAliveScope>
-  );
+  return <RouterProvider router={router} />;
 }

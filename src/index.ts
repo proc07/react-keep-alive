@@ -1,6 +1,8 @@
 // ─── Components ──────────────────────────────────────────────────────────────
 export { KeepAliveScope } from './KeepAliveScope';
 export { KeepAlive } from './KeepAlive';
+export { KeepAliveRouteOutlet } from './router/KeepAliveRouteOutlet';
+export type { KeepAliveRouteOutletProps } from './router/KeepAliveRouteOutlet';
 
 // ─── Hooks ───────────────────────────────────────────────────────────────────
 export { useActivated } from './hooks/useActivated';

@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useActivated, useDeactivated } from 'react-keep-alive';
 
 interface LogEntry {
   time: string;
@@ -33,15 +32,6 @@ export default function Counter() {
   useEffect(() => {
     logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [logs]);
-
-  // Vue-like 生命周期钩子
-  useActivated(() => {
-    addLog('activated', '🟢 activated — 从缓存恢复，可在此刷新数据');
-  });
-
-  useDeactivated(() => {
-    addLog('deactivated', '🟡 deactivated — 已推入缓存，定时器可在此暂停');
-  });
 
   return (
     <div className="card page-enter">

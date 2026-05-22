@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import { resolve } from 'path';
+import { fileURLToPath } from 'url';
 
 export default defineConfig({
   plugins: [react()],
@@ -10,11 +10,11 @@ export default defineConfig({
     alias: [
       {
         find: 'react-keep-alive/router',
-        replacement: resolve(__dirname, '../src/router/index.ts'),
+        replacement: fileURLToPath(new URL('../src/router/index.ts', import.meta.url)),
       },
       {
         find: 'react-keep-alive',
-        replacement: resolve(__dirname, '../src/index.ts'),
+        replacement: fileURLToPath(new URL('../src/index.ts', import.meta.url)),
       },
     ],
   },

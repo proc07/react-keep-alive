@@ -582,3 +582,292 @@ body {
   background: var(--accent);
   flex-shrink: 0;
 }
+
+/* ══════════════════════════════════════════════════════════════
+   ─── Nested Routes Demo ─────────────────────────────────────
+   ══════════════════════════════════════════════════════════════ */
+
+/* 最外层容器 */
+.nested-root {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* 面包屑 */
+.nested-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+.breadcrumb-item { color: var(--text-muted); }
+.breadcrumb-item.active { color: var(--accent-light); }
+.breadcrumb-sep { color: var(--border); }
+
+/* 页面标题 */
+.nested-title {
+  font-size: 22px;
+  font-weight: 800;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* 通用 badge */
+.nested-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+  background: var(--accent-dim);
+  color: var(--accent-light);
+  border: 1px solid rgba(99,102,241,0.3);
+}
+.nested-badge--green {
+  background: var(--green-dim);
+  color: var(--green);
+  border-color: rgba(16,185,129,0.3);
+}
+.nested-badge--orange {
+  background: var(--orange-dim);
+  color: var(--orange);
+  border-color: rgba(245,158,11,0.3);
+}
+.nested-badge--purple {
+  background: rgba(167,139,250,0.12);
+  color: #a78bfa;
+  border-color: rgba(167,139,250,0.3);
+}
+
+/* 路径代码片段 */
+.path-code {
+  background: var(--bg);
+  padding: 2px 7px;
+  border-radius: 5px;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  color: var(--accent-light);
+  border: 1px solid var(--border);
+}
+
+/* ── 导航条 ── */
+.nested-nav {
+  margin-bottom: 0;
+}
+.nested-nav-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+.nested-nav-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.nested-link {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  text-decoration: none;
+  color: var(--text-dim);
+  transition: all 0.18s;
+  min-width: 140px;
+}
+.nested-link:hover {
+  border-color: var(--accent);
+  color: var(--text);
+  background: var(--bg-card-hover);
+  transform: translateY(-1px);
+}
+.nested-link--active {
+  border-color: var(--accent) !important;
+  background: var(--accent-dim) !important;
+  color: var(--accent-light) !important;
+}
+.nested-link--sm {
+  min-width: 120px;
+  padding: 8px 14px;
+}
+.nested-link-label { font-size: 14px; font-weight: 600; }
+.nested-link-desc  { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+.nested-nav--l1 { }
+.nested-nav--l2 .nested-link--active {
+  border-color: var(--orange) !important;
+  background: var(--orange-dim) !important;
+  color: var(--orange) !important;
+}
+
+/* ── Outlet 渲染出口容器 ── */
+.nested-outlet {
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 0;
+}
+.nested-outlet--l1 {
+  border: 2px dashed rgba(99,102,241,0.35);
+  background: rgba(99,102,241,0.04);
+}
+.nested-outlet--l2 {
+  border: 2px dashed rgba(245,158,11,0.35);
+  background: rgba(245,158,11,0.04);
+  margin-top: 16px;
+}
+
+.outlet-indicator {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 6px;
+  display: inline-block;
+  margin-bottom: 12px;
+}
+.outlet-indicator--l1 {
+  background: var(--accent-dim);
+  color: var(--accent-light);
+  border: 1px solid rgba(99,102,241,0.3);
+}
+.outlet-indicator--l2 {
+  background: var(--orange-dim);
+  color: var(--orange);
+  border: 1px solid rgba(245,158,11,0.3);
+}
+
+/* ── 二/三级页面共用 ── */
+.nested-page {
+  display: flex;
+  flex-direction: column;
+}
+.nested-l3-page {
+  display: flex;
+  flex-direction: column;
+}
+.nested-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.nested-page-title {
+  font-size: 18px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.nested-page-path {
+  font-size: 12px;
+  font-family: 'Courier New', monospace;
+  color: var(--text-muted);
+  background: var(--bg);
+  padding: 3px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+
+/* ── 路由层级树 ── */
+.route-tree {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.route-tree-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+.route-tree-item {
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+.route-tree-l1 { padding-left: 0; }
+.route-tree-l2 { padding-left: 20px; }
+.route-tree-l3 { padding-left: 40px; }
+.route-tree-item code {
+  background: var(--bg-card);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--accent-light);
+}
+
+/* ── Dashboard 统计卡片 ── */
+.dashboard-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  margin: 20px 0;
+}
+.stat-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: border-color 0.18s, transform 0.18s;
+}
+.stat-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+.stat-icon  { font-size: 22px; }
+.stat-value { font-size: 22px; font-weight: 800; line-height: 1; }
+.stat-label { font-size: 12px; color: var(--text-muted); }
+
+/* ── 安全设置开关 ── */
+.security-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.security-item-info { flex: 1; }
+.security-item-title { font-size: 14px; font-weight: 600; color: var(--text); }
+.security-item-desc  { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+.toggle-btn {
+  width: 46px; height: 26px;
+  border-radius: 13px;
+  border: none;
+  background: var(--border);
+  cursor: pointer;
+  position: relative;
+  transition: background 0.2s;
+  flex-shrink: 0;
+  padding: 0;
+}
+.toggle-btn--on { background: var(--accent); }
+.toggle-knob {
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  transition: left 0.2s;
+  display: block;
+}
+.toggle-btn--on .toggle-knob { left: 23px; }
+

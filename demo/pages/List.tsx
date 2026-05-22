@@ -1,5 +1,4 @@
 import React, { useState, useMemo } from 'react';
-import { useActivated } from 'react-keep-alive';
 
 interface Employee {
   id: number;
@@ -46,9 +45,6 @@ export default function ListPage() {
   const [statusFilter, setStatusFilter] = useState<Employee['status'] | 'all'>('all');
   const [activatedCount, setActivatedCount] = useState(0);
   console.log('ListPage render');
-  useActivated(() => {
-    setActivatedCount((c) => c + 1);
-  });
 
   const filtered = useMemo(() => {
     return EMPLOYEES.filter((e) => {

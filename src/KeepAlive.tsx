@@ -10,6 +10,7 @@ import { useKeepAliveContextInternal } from './KeepAliveContext';
 import { KeepAliveItemContext } from './KeepAliveItemContext';
 import { setupScrollTracker, saveScrollState, restoreScrollState } from './scroll';
 import type { KeepAliveProps, CacheEntry } from './types';
+import { keepAliveEventBus } from './eventBus';
 
 const useIsomorphicLayoutEffect =
   typeof window !== 'undefined' ? useLayoutEffect : useEffect;
@@ -94,6 +95,7 @@ export function KeepAlive({
       setStatusMap((prev) => new Map(prev).set(cacheKey, 'active'));
       setActiveKey(cacheKey);
       onActivated?.();
+      keepAliveEventBus.emit(cacheKey, 'active');
     } else {
       // ── 首次挂载：在 placeholder 中创建新 container ─────────────────
       const container = document.createElement('div');
@@ -157,6 +159,7 @@ export function KeepAlive({
       // 更新 statusMap，触发 Portal children 重新渲染，从而激活生命周期钩子
       setStatusMap((prev) => new Map(prev).set(cacheKey, 'inactive'));
       onDeactivated?.();
+      keepAliveEventBus.emit(cacheKey, 'inactive');
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cacheKey]);
@@ -164,7 +167,7 @@ export function KeepAlive({
   // ── Render ───────────────────────────────────────────────────────────────
   if (!shouldCache()) {
     return (
-      <KeepAliveItemContext.Provider value={{ cacheKey, activeStatus: 'active' }}>
+      <KeepAliveItemContext.Provider value={{ cacheKey }}>
         <>{children as ReactNode}</>
       </KeepAliveItemContext.Provider>
     ) as ReactElement;

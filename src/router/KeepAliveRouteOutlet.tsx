@@ -39,7 +39,6 @@ export function KeepAliveRouteOutlet({
   if (!outlet) return null;
 
   // 获取当前 Outlet 马上要渲染的子路由匹配项
-  console.log(matches, depth)
   const childMatch = matches[depth + 1];
   const childHandle = childMatch?.handle as { isKeepalive?: boolean } | undefined;
   const isKeepalive = childHandle?.isKeepalive ?? false;

@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, Outlet } from 'react-router-dom';
 
 const LEVEL2_LINKS = [
   { to: '/nested/settings/profile',  label: '👤 个人资料', desc: 'Profile' },

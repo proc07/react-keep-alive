@@ -129,3 +129,46 @@ describe('useActivated + useDeactivated order', () => {
     expect(events[1]).toBe('activated');
   });
 });
+
+describe('render counts', () => {
+  it('does not trigger re-render of cached component when deactivating', async () => {
+    let renderCount = 0;
+    function TrackedPage() {
+      renderCount++;
+      return <div data-testid="tracked">Tracked</div>;
+    }
+
+    function App() {
+      const [tab, setTab] = useState<'a' | 'b'>('a');
+      return (
+        <KeepAliveScope>
+          <button data-testid="to-a" onClick={() => setTab('a')}>A</button>
+          <button data-testid="to-b" onClick={() => setTab('b')}>B</button>
+          {tab === 'a' && (
+            <KeepAlive cacheKey="a">
+              <TrackedPage />
+            </KeepAlive>
+          )}
+          {tab === 'b' && (
+            <KeepAlive cacheKey="b">
+              <div>B</div>
+            </KeepAlive>
+          )}
+        </KeepAliveScope>
+      );
+    }
+
+    const { getByTestId } = render(<App />);
+    expect(renderCount).toBe(1); // First render
+
+    // Switch A → B (deactivate A)
+    fireEvent.click(getByTestId('to-b'));
+    
+    // Wait a brief moment to let React commit all effects/renders
+    await new Promise((r) => setTimeout(r, 50));
+
+    // Verify it still rendered exactly 1 time! (No extra re-render on deactivation)
+    expect(renderCount).toBe(1);
+  });
+});
+

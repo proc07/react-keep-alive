@@ -7,8 +7,6 @@ import { createContext, useContext } from 'react';
  */
 export interface KeepAliveItemContextValue {
   cacheKey: string;
-  /** 当前缓存状态（active = 显示, inactive = 已缓存隐藏, init = 首次挂载） */
-  activeStatus: 'active' | 'inactive' | 'init';
 }
 
 export const KeepAliveItemContext =
@@ -23,3 +21,4 @@ export function useKeepAliveItemContext(): KeepAliveItemContextValue {
   }
   return ctx;
 }
+

@@ -110,7 +110,7 @@ export function KeepAliveScope({
     }),
     [caches, max, strategy, drop, getCacheKeys, refresh, activeKey, statusMap]
   );
-  console.log(caches, 'caches')
+
   return (
     <KeepAliveContext.Provider value={contextValue}>
       {children}
@@ -122,23 +122,43 @@ export function KeepAliveScope({
         aria-hidden="true"
         data-keep-alive-root="true"
       >
-        {Array.from(caches.values()).map((entry) =>
-          createPortal(
-            // 每次渲染时从 statusMap 计算最新的 Provider value，
-            // 子组件始终具有最新的 activeStatus。
-            <KeepAliveItemContext.Provider
-              value={{
-                cacheKey: entry.key,
-                activeStatus: statusMap.get(entry.key) ?? 'init',
-              }}
+        {Array.from(caches.values()).map((entry) => {
+          return createPortal(
+            <KeepAliveItemProvider
+              cacheKey={entry.key}
             >
               {entry.element}
-            </KeepAliveItemContext.Provider>,
+            </KeepAliveItemProvider>,
             entry.container,
             entry.key
-          )
-        )}
+          );
+        })}
       </div>
     </KeepAliveContext.Provider>
   );
 }
+
+// ─── Memoized Provider Wrapper ────────────────────────────────────────────────
+// 借助 React.memo 配合 useMemo 阻止其他页面切换时触发处于 inactive 状态缓存页面的无谓重渲染。
+const KeepAliveItemProvider = React.memo(({
+  cacheKey,
+  children,
+}: {
+  cacheKey: string;
+  children: React.ReactNode;
+}) => {
+  const value = useMemo(
+    () => ({
+      cacheKey,
+    }),
+    [cacheKey]
+  );
+
+  return (
+    <KeepAliveItemContext.Provider value={value}>
+      {children}
+    </KeepAliveItemContext.Provider>
+  );
+});
+
+KeepAliveItemProvider.displayName = 'KeepAliveItemProvider';

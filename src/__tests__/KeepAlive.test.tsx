@@ -134,15 +134,70 @@ describe('useKeepAliveContext', () => {
     );
   }
 
-  it('drop() clears all caches', async () => {
+  it('drop() clears all caches (active page is recreated/remounted)', async () => {
     const { getByTestId } = render(<AppWithPanel />);
     await waitFor(() => expect(getByTestId('cache-count').textContent).toBe('1'));
 
     fireEvent.click(getByTestId('switch'));
     await waitFor(() => expect(getByTestId('cache-count').textContent).toBe('2'));
 
+    // Increment count on tab B (scoped to avoid hidden counter from tab A)
+    const pageBContainer = document.querySelector('[data-keep-alive-key="page-b"]') as HTMLElement;
+    const plusBtn = pageBContainer.querySelector('button')!;
+    const countSpan = pageBContainer.querySelector('[data-testid="count"]')!;
+    fireEvent.click(plusBtn);
+    fireEvent.click(plusBtn);
+    expect(countSpan.textContent).toBe('2');
+
+    // Drop all. Inactive page-a is removed, active page-b is dropped and immediately recreated.
+    // So cache count should be 1 (page-b), and the state of page-b is reset to 0.
     fireEvent.click(getByTestId('drop-all'));
-    await waitFor(() => expect(getByTestId('cache-count').textContent).toBe('0'));
+    await waitFor(() => expect(getByTestId('cache-count').textContent).toBe('1'));
+    
+    // Scoped query again to get the newly mounted DOM element
+    const pageBContainerNew = document.querySelector('[data-keep-alive-key="page-b"]') as HTMLElement;
+    expect(pageBContainerNew.querySelector('[data-testid="count"]')!.textContent).toBe('0');
+    expect(getByTestId('active-key').textContent).toBe('page-b');
+  });
+
+  it('refresh(key) remounts active component and resets its state', async () => {
+    function RefreshButton() {
+      const { refresh } = useKeepAliveContext();
+      return (
+        <button data-testid="refresh-btn" onClick={() => refresh('page-a')}>Refresh Page A</button>
+      );
+    }
+
+    function AppWithRefresh() {
+      return (
+        <KeepAliveScope>
+          <RefreshButton />
+          <KeepAlive cacheKey="page-a">
+            <Counter />
+          </KeepAlive>
+        </KeepAliveScope>
+      );
+    }
+
+    const { getByTestId } = render(<AppWithRefresh />);
+    await waitFor(() => expect(document.querySelector('[data-keep-alive-key="page-a"]')).toBeTruthy());
+
+    // Increment count
+    const pageAContainer = document.querySelector('[data-keep-alive-key="page-a"]') as HTMLElement;
+    const plusBtn = pageAContainer.querySelector('button')!;
+    const countSpan = pageAContainer.querySelector('[data-testid="count"]')!;
+    fireEvent.click(plusBtn);
+    fireEvent.click(plusBtn);
+    expect(countSpan.textContent).toBe('2');
+
+    // Trigger refresh
+    fireEvent.click(getByTestId('refresh-btn'));
+
+    // Component should still be rendered (element is present) but state should be reset to 0
+    await waitFor(() => {
+      const pageAContainerNew = document.querySelector('[data-keep-alive-key="page-a"]') as HTMLElement;
+      expect(pageAContainerNew.querySelector('[data-testid="count"]')!.textContent).toBe('0');
+    });
   });
 
   it('throws when used outside KeepAliveScope', () => {

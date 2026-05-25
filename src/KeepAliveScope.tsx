@@ -140,6 +140,7 @@ export function KeepAliveScope({
             <KeepAliveItemProvider
               cacheKey={entry.key}
               activeStatus={status}
+              createdTime={entry.createdTime}
             >
               {entry.element}
             </KeepAliveItemProvider>,
@@ -162,12 +163,14 @@ const dummyContext = React.createContext<any>(null);
 interface KeepAliveItemProviderProps {
   cacheKey: string;
   activeStatus: 'active' | 'inactive' | 'init';
+  createdTime: number;
   children: React.ReactNode;
 }
 
 const KeepAliveItemProvider = React.memo(({
   cacheKey,
   activeStatus,
+  createdTime,
   children,
 }: KeepAliveItemProviderProps) => {
   const currentKeepAlive = useContext(KeepAliveContext);
@@ -183,6 +186,13 @@ const KeepAliveItemProvider = React.memo(({
 
   // 2. 存储完整的渲染输出。当组件处于非激活状态时，直接返回相同的引用，以触发 React 的 Bailout（跳过协调）
   const renderedRef = useRef<React.ReactElement | null>(null);
+  const createdTimeRef = useRef(createdTime);
+
+  // 如果 createdTime 改变，说明缓存被重建（例如 refresh / drop）了，我们需要强制重新渲染并重建状态
+  const isTimeChanged = createdTime !== createdTimeRef.current;
+  if (isTimeChanged) {
+    createdTimeRef.current = createdTime;
+  }
 
   // 3. 根据全局 KeepAlive 状态判断当前缓存项是否处于激活状态
   const activeKeyRef = currentKeepAlive?.activeKeyRef;
@@ -197,11 +207,15 @@ const KeepAliveItemProvider = React.memo(({
     [cacheKey]
   );
 
-  // 4. 关键：仅在组件激活（Active）或首次渲染时重新构建子树并更新缓存引用。
-  // 在非激活（Inactive）状态下，不重新构建，直接复用上一次的元素引用。
-  // 这会诱导局部 Provider 在比对 value 时发现引用未变，从而协助 React 判定无需向下协调。
-  if (isActive || !renderedRef.current) {
-    let content: React.ReactNode = children;
+  // 4. 关键：仅在组件激活（Active）、首次渲染、或者缓存被重建（isTimeChanged）时重新构建子树并更新缓存引用。
+  // 在非激活（Inactive）状态下且未重建时，不重新构建，直接复用上一次的元素引用。
+  if (isActive || !renderedRef.current || isTimeChanged) {
+    // 使用带有 key 的 Fragment，当 createdTime 变化时，强制 React 销毁旧实例并挂载新实例以重置状态
+    let content: React.ReactNode = (
+      <React.Fragment key={createdTime}>
+        {children}
+      </React.Fragment>
+    );
 
     // 局部代理路由及 KeepAlive 上下文，起到“屏蔽罩”作用，防止最外层 Context 的变更直接穿透渲染后台组件
     if (UNSAFE_NavigationContext) {

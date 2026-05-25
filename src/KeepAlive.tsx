@@ -54,6 +54,8 @@ export function KeepAlive({
     return true;
   }, [cacheKey, include, exclude]);
 
+  const hasCache = caches.has(cacheKey);
+
   // ── 挂载 / 命中缓存 ──────────────────────────────────────────────────────
   useIsomorphicLayoutEffect(() => {
     const placeholder = placeholderRef.current;
@@ -76,6 +78,9 @@ export function KeepAlive({
     const existingEntry = caches.get(cacheKey);
 
     if (existingEntry) {
+      if (existingEntry.container === containerRef.current) {
+        return;
+      }
       // ── 命中缓存：将 container 从 cacheRoot 移回 placeholder ────────────
       const container = existingEntry.container;
       containerRef.current = container;
@@ -125,7 +130,7 @@ export function KeepAlive({
       setActiveKey(cacheKey);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cacheKey]);
+  }, [cacheKey, hasCache]);
 
   // ── 同步 entry.element 为最新的 children ─────────────────────────────────
   // 直接修改而非调用 setCaches，避免父组件读取 context 时触发无限重渲染循环。

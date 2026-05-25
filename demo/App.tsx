@@ -4,6 +4,7 @@ import {
   RouterProvider,
   NavLink,
   useLocation,
+  Navigate,
 } from 'react-router-dom';
 import { KeepAliveScope, useKeepAliveContext, KeepAliveRouteOutlet } from 'react-keep-alive';
 import Counter from './pages/Counter';
@@ -15,6 +16,11 @@ import SettingsLayout from './pages/nested/SettingsLayout';
 import Dashboard from './pages/nested/Dashboard';
 import ProfilePage from './pages/nested/ProfilePage';
 import SecurityPage from './pages/nested/SecurityPage';
+import DashboardPage from './pages/system/DashboardPage';
+import DashboardPageFixedA from './pages/system/DashboardPageFixedA';
+import DashboardPageFixedB from './pages/system/DashboardPageFixedB';
+import LMPage from './pages/system/LM';
+import MyCasesPage from './pages/system/MyCases';
 
 // ─── Navigation config ────────────────────────────────────────────────────────
 
@@ -24,6 +30,7 @@ const NAV_LINKS = [
   { to: '/list',   label: '列表',   icon: '📋', exact: false },
   { to: '/scroll', label: '滚动',   icon: '🖱️', exact: false },
   { to: '/nested', label: '嵌套路由', icon: '🗂', exact: false },
+  { to: '/system/dashboard', label: '父级跳转复现', icon: '🚨', exact: false },
 ];
 
 // ─── Cache Status Panel ───────────────────────────────────────────────────────
@@ -199,6 +206,41 @@ const routeConfig = [
               { path: 'security', element: <SecurityPage /> },
             ],
           },
+        ],
+      },
+      // ── Bug 复现路由 ──────────────────────────────────────────
+      {
+        path: 'system/dashboard',
+        element: <DashboardPage />,
+        handle: { isKeepalive: true },
+        children: [
+          { path: 'lm', element: <LMPage /> },
+          { path: 'myCases', element: <MyCasesPage /> },
+        ],
+      },
+      // ── 解决方案 A：不缓存 Layout，使用 Index 路由跳转 ───
+      {
+        path: 'system/dashboard-fixed-a',
+        element: <DashboardPageFixedA />,
+        // 布局本身不缓存
+        handle: { isKeepalive: false },
+        children: [
+          // Index 路由不被缓存，因此能确保每次进入父路径时稳定重定向
+          { index: true, element: <Navigate to="lm" replace /> },
+          // 子路由开启 KeepAlive 缓存
+          { path: 'lm', element: <LMPage />, handle: { isKeepalive: true } },
+          { path: 'myCases', element: <MyCasesPage />, handle: { isKeepalive: true } },
+        ],
+      },
+      // ── 解决方案 B：缓存 Layout，使用 useActivated 触发跳转 ───
+      {
+        path: 'system/dashboard-fixed-b',
+        element: <DashboardPageFixedB />,
+        // 布局本身缓存
+        handle: { isKeepalive: true },
+        children: [
+          { path: 'lm', element: <LMPage /> },
+          { path: 'myCases', element: <MyCasesPage /> },
         ],
       },
     ],

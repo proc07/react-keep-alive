@@ -11,7 +11,6 @@ import React, {
 import { createPortal } from 'react-dom';
 import {
   UNSAFE_LocationContext,
-  UNSAFE_NavigationContext,
   UNSAFE_RouteContext,
 } from 'react-router-dom';
 import { KeepAliveContext } from './KeepAliveContext';
@@ -178,11 +177,9 @@ const KeepAliveItemProvider = React.memo(({
 
   // 1. 获取 React Router 的 Context（如果不存在则退回到 dummyContext 避免崩溃）
   const locCtx = UNSAFE_LocationContext || dummyContext;
-  const navCtx = UNSAFE_NavigationContext || dummyContext;
   const routeCtx = UNSAFE_RouteContext || dummyContext;
 
   const currentLoc = useContext(locCtx);
-  const currentNav = useContext(navCtx);
   const currentRoute = useContext(routeCtx);
 
   // 2. 存储完整的渲染输出。当组件处于非激活状态时，直接返回相同的引用，以触发 React 的 Bailout（跳过协调）
@@ -225,13 +222,6 @@ const KeepAliveItemProvider = React.memo(({
     );
 
     // 局部代理路由及 KeepAlive 上下文，起到“屏蔽罩”作用，防止最外层 Context 的变更直接穿透渲染后台组件
-    if (UNSAFE_NavigationContext) {
-      content = (
-        <UNSAFE_NavigationContext.Provider value={currentNav}>
-          {content}
-        </UNSAFE_NavigationContext.Provider>
-      );
-    }
 
     if (UNSAFE_RouteContext) {
       content = (

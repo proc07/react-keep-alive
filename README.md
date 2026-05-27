@@ -9,7 +9,7 @@
 
 ## 功能特性
 
-- ✅ **状态缓存** — 切换组件时保留 state、DOM、滚动位置
+- ✅ **状态缓存** — 切换组件时保留 state、DOM、滚动位置自动恢复
 - ✅ **生命周期钩子** — `useActivated` / `useDeactivated`，对标 Vue `onActivated` / `onDeactivated`
 - ✅ **LRU / FIFO 淘汰策略** — 自动管理缓存内存，防止无限增长
 - ✅ **include / exclude 过滤** — 精确控制哪些组件需要缓存
@@ -224,53 +224,26 @@ FIFO（先进先出）：
   inactive 项按 createdTime 升序排列，最早创建的先被淘汰
 ```
 
-## 与同类方案对比
+#### 本库实现方案
 
-市面上主流的 React 缓存方案大致分为两类，各有不同的实现路线和权衡：
+实现原理：结合了 Portal 的 DOM 存活能力与 Suspense 的组件冻结能力。
 
-### 整体对比
+- DOM 移动：组件在休眠时，通过 Portal 被移动到全局隐藏的 cacheRoot 容器，确保 DOM 不被销毁。
+- Suspense 冻结：通过自定义 <Suspender> 组件，在 isActive = false 时主动 throw 一个 Pending 状态的 - Promise，强制让 React 的 Suspense 边界将整个子树挂起（Suspend）。
+- 屏蔽罩设计：在 Portal 外部嵌套了自定义路由上下文 Provider，拦截了 UNSAFE_RouteContext 和 UNSAFE_LocationContext，防止后台挂起的组件在路由切换的瞬间读到脏路由数据而崩溃。
+- 采用“双层 div 节点”（即外层 placeholder 占位符和内层 container 容器）的设计。
 
+  绕过 React 的 DOM 销毁机制（最核心原因）
+  外层 placeholder 是由 React 渲染和管理的： 当用户切换页面，KeepAlive 组件卸载（Unmount）时，React 会自动删除页面上的 placeholder DOM 节点。
+  内层 container 是纯手动创建并受保护的： 为了保持缓存组件的生命周期（Fiber 树和 DOM 状态），Portal 必须渲染在一个永远不被 React 销毁的 DOM 容器中。 因此，内层的 container 是通过 document.createElement('div') 手动创建的。
+  分工协作：
+  当组件**停用（卸载）**时：我们在 React 销毁 placeholder 之前，把内层 container 强行剪切并移到隐藏的 cacheRoot 下，使其得以存活。
+  当组件**重新激活（挂载）**时：React 重新渲染出一个新的 placeholder，我们再把存活的 container 剪切回来挂载到它下面。
+  如果只有一层，React 卸载组件时会将这个唯一的 div 连同里面的 Portal 实例一起彻底从 DOM 树和 Fiber 树中抹去，缓存就会失效。
 
-| 维度            | **本库**          | react-activation              | keepalive-for-react |
-| --------------- | ----------------- | ----------------------------- | ------------------- |
-| React 版本兼容  | ✅ 18 / 19 原生   | ⚠️ R18 部分兼容，R19 不稳定 | ✅ 18 / 19          |
-| 实现原理        | Portal + DOM 搬运 | Fiber 内部 hack               | Portal + CSS 隐藏   |
-| React 内部 API  | ✅ 全公开 API     | ❌ 使用私有 Fiber 字段        | ✅ 公开 API         |
-| Concurrent Mode | ✅ 完全兼容       | ⚠️ 存在问题                 | ✅ 兼容             |
-| 布局影响        | ✅ 无（物理移出） | ✅ 无                         | ❌ 占位             |
-| 生命周期钩子    | ✅ 响应式传播     | ✅ 支持                       | ⚠️ 较弱           |
-| React Router v6 | ✅ 原生集成       | ⚠️ 需要额外配置             | ✅ 支持             |
-| TypeScript      | ✅ 完整           | ⚠️ 部分                     | ✅ 完整             |
-| 零依赖          | ✅                | ❌                            | ✅                  |
-| 包大小          | ~5KB              | ~15KB                         | ~8KB                |
-
----
-
-### 逐项详解
-
-#### react-activation（最流行，但有 Fiber hack 风险）
-
-[react-activation](https://github.com/CJY0208/react-activation) 是目前 Star 最多的同类方案。它通过直接操作 React Fiber 内部结构（`__reactFiber`、`_reactInternals`）来"接管"子树的渲染：
-
-```js
-// react-activation 内部实现（简化示意）
-const fiber = instance.__reactFiber          // ❌ 访问私有字段
-fiber.child.stateNode.forceUpdate()          // ❌ 强制更新 Fiber 节点
-```
-
-**风险**：React 的私有 Fiber 字段在任何版本都可能改名/移除。React 18 的 Concurrent Mode 引入了调度优先级，直接操作 Fiber 可能导致渲染状态不一致，在 React 19 中已出现多个已知 Bug。
-
-**本库的做法**：零 Fiber 操作，完全使用公开 API（`createPortal`、`useLayoutEffect`、`useState`），不受 React 版本迭代影响。
-
----
-
-#### keepalive-for-react（Portal 方案，但用 CSS 隐藏）
-
-[keepalive-for-react](https://github.com/irychen/keepalive-for-react) 与本库思路相近，同样使用 Portal，但选择用 CSS `display: none` 控制显隐：
-
-#### 本库方案
-
-
+优势：
+完全使用 React 官方标准的公开 API（Suspense、Portal），稳定性极高。
+挂起期间后台组件的重绘和状态更新会被 React 拦截，实现真正的零 CPU 开销。
 
 ## 注意事项
 

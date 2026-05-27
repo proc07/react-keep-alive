@@ -1,6 +1,7 @@
 import { useRef, useEffect, useLayoutEffect } from 'react';
 import { useKeepAliveItemContext } from '../KeepAliveItemContext';
 import { keepAliveEventBus } from '../eventBus';
+import { CACHE_STATUS } from '../constants';
 
 const useIsomorphicLayoutEffect =
   typeof window !== 'undefined' ? useLayoutEffect : useEffect;
@@ -15,7 +16,7 @@ export function useDeactivated(callback: () => void): void {
 
   useIsomorphicLayoutEffect(() => {
     const unsubscribe = keepAliveEventBus.subscribe(cacheKey, (status) => {
-      if (status === 'inactive') {
+      if (status === CACHE_STATUS.INACTIVE) {
         callbackRef.current();
       }
     });

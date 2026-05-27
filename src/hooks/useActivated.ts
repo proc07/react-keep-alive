@@ -1,6 +1,7 @@
 import { useRef, useEffect, useLayoutEffect } from 'react';
 import { useKeepAliveItemContext } from '../KeepAliveItemContext';
 import { keepAliveEventBus } from '../eventBus';
+import { CACHE_STATUS } from '../constants';
 
 const useIsomorphicLayoutEffect =
   typeof window !== 'undefined' ? useLayoutEffect : useEffect;
@@ -29,7 +30,7 @@ export function useActivated(callback: () => void): void {
 
     // 订阅事件总线的 active 激活信号
     const unsubscribe = keepAliveEventBus.subscribe(cacheKey, (status) => {
-      if (status === 'active') {
+      if (status === CACHE_STATUS.ACTIVE) {
         callbackRef.current();
       }
     });

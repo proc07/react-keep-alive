@@ -1,4 +1,6 @@
-type Listener = (status: 'active' | 'inactive') => void;
+import type { CacheStatus } from './constants';
+
+type Listener = (status: CacheStatus) => void;
 
 class KeepAliveEventBus {
   private listeners = new Map<string, Set<Listener>>();
@@ -20,7 +22,7 @@ class KeepAliveEventBus {
     };
   }
 
-  emit(key: string, status: 'active' | 'inactive'): void {
+  emit(key: string, status: CacheStatus): void {
     const set = this.listeners.get(key);
     if (set) {
       // Copy to array to avoid mutation during iteration

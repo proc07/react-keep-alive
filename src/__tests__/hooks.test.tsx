@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { describe, it, expect, vi } from 'vitest';
-import { render, fireEvent, waitFor } from '@testing-library/react';
+import { render, fireEvent, waitFor, within } from '@testing-library/react';
 import { KeepAliveScope } from '../KeepAliveScope';
 import { KeepAlive } from '../KeepAlive';
 import { useActivated } from '../hooks/useActivated';
 import { useDeactivated } from '../hooks/useDeactivated';
-import { MemoryRouter, useLocation, Routes, Route, useNavigate } from 'react-router-dom';
+import { MemoryRouter, useLocation, Routes, Route, useNavigate, Outlet, createMemoryRouter, RouterProvider, useParams } from 'react-router-dom';
 import { useKeepAliveContext } from '../hooks/useKeepAliveContext';
+import { KeepAliveRouteOutlet } from '../router/KeepAliveRouteOutlet';
 
 // ─── Helper ───────────────────────────────────────────────────────────────────
 
@@ -298,6 +299,147 @@ describe('render counts', () => {
 
     // Verify it did NOT trigger a re-render of the inactive TestPage (Form)
     expect(renderCount).toBe(1);
+  });
+
+  it('preserves nested route Outlet state when navigating back to parent route', async () => {
+    function SettingsLayout() {
+      return (
+        <div>
+          <h2>Settings Layout</h2>
+          <Outlet />
+        </div>
+      );
+    }
+
+    function ProfilePage() {
+      const [val, setVal] = useState('');
+      React.useEffect(() => {
+        console.log('--- ProfilePage MOUNTED ---');
+        return () => console.log('--- ProfilePage UNMOUNTED ---');
+      }, []);
+      return (
+        <div>
+          <h3>Profile</h3>
+          <input
+            data-testid="profile-input"
+            value={val}
+            onChange={(e) => setVal(e.target.value)}
+          />
+        </div>
+      );
+    }
+
+    function App() {
+      const navigate = useNavigate();
+      const [count, setCount] = useState(0);
+      return (
+        <KeepAliveScope>
+          <button data-testid="to-dashboard" onClick={() => navigate('/dashboard')}>
+            Dashboard
+          </button>
+          <button data-testid="to-settings" onClick={() => navigate('/settings/profile')}>
+            Settings
+          </button>
+          <button data-testid="force-rerender" onClick={() => setCount(c => c + 1)}>
+            Force Re-render
+          </button>
+          <KeepAliveRouteOutlet />
+        </KeepAliveScope>
+      );
+    }
+
+    const router = createMemoryRouter([
+      {
+        path: '/',
+        element: <App />,
+        children: [
+          {
+            path: 'settings',
+            element: <SettingsLayout />,
+            handle: { isKeepalive: true },
+            children: [
+              {
+                path: 'profile',
+                element: <ProfilePage />,
+              },
+              {
+                path: 'security',
+                element: <div>Security</div>,
+              },
+            ],
+          },
+          {
+            path: 'dashboard',
+            element: <div>Dashboard Page</div>,
+          },
+        ],
+      },
+    ], {
+      initialEntries: ['/settings/profile'],
+    });
+
+    const { getByTestId } = render(<RouterProvider router={router} />);
+
+    // 1. Verify we are on profile page and type something
+    const input = getByTestId('profile-input') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: 'my-profile-data' } });
+    expect(input.value).toBe('my-profile-data');
+
+    // 2. Navigate away to /dashboard
+    fireEvent.click(getByTestId('to-dashboard'));
+    await new Promise((r) => setTimeout(r, 50));
+
+    // 3. Force re-render of KeepAliveScope while at /dashboard
+    fireEvent.click(getByTestId('force-rerender'));
+    await new Promise((r) => setTimeout(r, 50));
+
+    // 4. Navigate back to /settings/profile
+    fireEvent.click(getByTestId('to-settings'));
+    await new Promise((r) => setTimeout(r, 50));
+
+    const activePlaceholder = document.querySelector('[data-keep-alive-placeholder="/settings/profile"]') as HTMLElement;
+    const inputAfter = within(activePlaceholder).getByTestId('profile-input') as HTMLInputElement;
+    expect(inputAfter.value).toBe('my-profile-data');
+  });
+
+  it('preserves correct location pathname in useDeactivated hook when navigating away', async () => {
+    let deactivatedPathname: string | null = null;
+
+    function TestPage() {
+      const location = useLocation();
+      useDeactivated(() => {
+        deactivatedPathname = location.pathname;
+      });
+      return <div>Test Page</div>;
+    }
+
+    function App() {
+      const navigate = useNavigate();
+      return (
+        <KeepAliveScope>
+          <button data-testid="to-form" onClick={() => navigate('/form')}>Form</button>
+          <button data-testid="to-list" onClick={() => navigate('/list')}>List</button>
+          <Routes>
+            <Route path="/form" element={<KeepAlive cacheKey="/form"><TestPage /></KeepAlive>} />
+            <Route path="/list" element={<div>List Page</div>} />
+          </Routes>
+        </KeepAliveScope>
+      );
+    }
+
+    const { getByTestId } = render(
+      <MemoryRouter initialEntries={['/form']}>
+        <App />
+      </MemoryRouter>
+    );
+
+    // Navigate from /form to /list
+    fireEvent.click(getByTestId('to-list'));
+    await new Promise((r) => setTimeout(r, 50));
+
+    // When /form is deactivated, it should see its own location /form in the hook,
+    // not the new location /list!
+    expect(deactivatedPathname).toBe('/form');
   });
 });
 

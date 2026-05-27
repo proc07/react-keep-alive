@@ -268,25 +268,9 @@ fiber.child.stateNode.forceUpdate()          // ❌ 强制更新 Fiber 节点
 
 [keepalive-for-react](https://github.com/irychen/keepalive-for-react) 与本库思路相近，同样使用 Portal，但选择用 CSS `display: none` 控制显隐：
 
-```
-keepalive-for-react 的隐藏方式：
-  <div style="display: none">
-    <Portal → 缓存的组件 />   ← 组件仍在 DOM 中，只是不可见
-  </div>
+#### 本库方案
 
-本库的隐藏方式：
-  <div style="display: none">   ← cacheRoot，始终隐藏
-    ← container 物理移入（appendChild）
-  </div>
-  <placeholder />               ← container 物理移出（appendChild 回来）
-```
 
-`display: none` 的方案存在两个问题：
-
-1. **布局污染**：隐藏容器仍然参与 CSS Stacking Context 计算，影响 `z-index`、`overflow` 等属性
-2. **滚动位置**：部分浏览器在 `display: none` 时会重置 `scrollTop`
-
-本库的 DOM 物理搬运彻底规避了这两个问题。
 
 ## 注意事项
 

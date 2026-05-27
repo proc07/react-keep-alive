@@ -21,7 +21,9 @@ import type {
   EvictionStrategy,
   KeepAliveScopeProps,
   KeepAliveContextValue,
+  CacheStatus,
 } from './types';
+import { CACHE_STATUS, dummyContext } from './constants';
 
 export function KeepAliveScope({
   children,
@@ -36,7 +38,7 @@ export function KeepAliveScope({
   const [caches, setCaches] = useState<Map<string, CacheEntry>>(() => new Map());
   const [activeKey, setActiveKey] = useState<string | null>(null);
   // statusMap 驱动 Portal children 重新渲染，从而触发 useActivated/useDeactivated
-  const [statusMap, setStatusMap] = useState<Map<string, 'active' | 'inactive' | 'init'>>(
+  const [statusMap, setStatusMap] = useState<Map<string, CacheStatus>>(
     () => new Map()
   );
 
@@ -76,7 +78,7 @@ export function KeepAliveScope({
     setCaches((prev) => {
       const next = new Map(prev);
       const candidates = Array.from(next.values())
-        .filter((e) => e.status === 'inactive')
+        .filter((e) => e.status === CACHE_STATUS.INACTIVE)
         .sort((a, b) =>
           strategy === 'LRU'
             ? a.lastActiveTime - b.lastActiveTime
@@ -135,7 +137,7 @@ export function KeepAliveScope({
         data-keep-alive-root="true"
       >
         {Array.from(caches.values()).map((entry) => {
-          const status = statusMap.get(entry.key) || 'init';
+          const status = statusMap.get(entry.key) || CACHE_STATUS.INIT;
           return createPortal(
             <KeepAliveItemProvider
               cacheKey={entry.key}
@@ -158,11 +160,10 @@ export function KeepAliveScope({
 // React 发现返回的 element 引用未变，会跳过整个子树的 reconciliation，
 // 从而彻底阻止 context 变化（如 location / KeepAliveContext）向下传播。
 // 同时，在这里包装路由 Context Provider，用来拦截外部路由变化对非活动组件的穿透渲染。
-const dummyContext = React.createContext<any>(null);
 
 interface KeepAliveItemProviderProps {
   cacheKey: string;
-  activeStatus: 'active' | 'inactive' | 'init';
+  activeStatus: CacheStatus;
   createdTime: number;
   children: React.ReactNode;
 }
@@ -195,12 +196,18 @@ const KeepAliveItemProvider = React.memo(({
   }
 
   // 3. 根据全局 KeepAlive 状态判断当前缓存项是否处于激活状态
+  // - 优先通过 activeKeyRef 进行双向比对（以支持在 Render 阶段进行同步的状态判断，规避双重渲染和 context 冲突）：
+  //   1) activeKeyRef.current 不为空
+  //   2) 激活的 key 与当前缓存项的 cacheKey 一致
+  //   3) 激活的 location 与当前组件捕获的路由 location 一致（防止同一个路由组件在不同参数下发生混淆）
+  // - 如果 activeKeyRef 缺失（例如在非路由或单体 KeepAlive 场景下），则退回到 activeStatus 状态判断：
+  //   状态为 ACTIVE（已激活）或 INIT（刚创建初始化）时，视为激活状态
   const activeKeyRef = currentKeepAlive?.activeKeyRef;
   const isActive = activeKeyRef
     ? (activeKeyRef.current !== null &&
        activeKeyRef.current.key === cacheKey &&
        (!activeKeyRef.current.location || activeKeyRef.current.location === currentLoc?.location))
-    : (activeStatus === 'active' || activeStatus === 'init');
+    : (activeStatus === CACHE_STATUS.ACTIVE || activeStatus === CACHE_STATUS.INIT);
 
   const itemCtxValue = useMemo(
     () => ({ cacheKey }),

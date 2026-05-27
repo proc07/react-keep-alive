@@ -13,8 +13,8 @@ import { setupScrollTracker, saveScrollState, restoreScrollState } from './scrol
 import type { KeepAliveProps, CacheEntry } from './types';
 import { keepAliveEventBus } from './eventBus';
 import { UNSAFE_LocationContext } from 'react-router-dom';
+import { CACHE_STATUS, dummyContext } from './constants';
 
-const dummyContext = React.createContext<any>(null);
 const locCtx = UNSAFE_LocationContext || dummyContext;
 
 const useIsomorphicLayoutEffect =
@@ -97,16 +97,16 @@ export function KeepAlive({
         const next = new Map(prev);
         const e = next.get(cacheKey);
         if (e) {
-          e.status = 'active';
+          e.status = CACHE_STATUS.ACTIVE;
           e.lastActiveTime = Date.now();
           e.element = children as ReactElement;
         }
         return next;
       });
-      setStatusMap((prev) => new Map(prev).set(cacheKey, 'active'));
+      setStatusMap((prev) => new Map(prev).set(cacheKey, CACHE_STATUS.ACTIVE));
       setActiveKey(cacheKey);
       onActivated?.();
-      keepAliveEventBus.emit(cacheKey, 'active');
+      keepAliveEventBus.emit(cacheKey, CACHE_STATUS.ACTIVE);
     } else {
       // ── 首次挂载：在 placeholder 中创建新 container ─────────────────
       const container = document.createElement('div');
@@ -121,12 +121,12 @@ export function KeepAlive({
         key: cacheKey,
         element: children as ReactElement,
         container,
-        status: 'active',
+        status: CACHE_STATUS.ACTIVE,
         lastActiveTime: now,
         createdTime: now,
       };
       setCaches((prev) => new Map(prev).set(cacheKey, entry));
-      setStatusMap((prev) => new Map(prev).set(cacheKey, 'active'));
+      setStatusMap((prev) => new Map(prev).set(cacheKey, CACHE_STATUS.ACTIVE));
       setActiveKey(cacheKey);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -164,13 +164,13 @@ export function KeepAlive({
       setCaches((prev) => {
         const next = new Map(prev);
         const e = next.get(cacheKey);
-        if (e) e.status = 'inactive';
+        if (e) e.status = CACHE_STATUS.INACTIVE;
         return next;
       });
       // 更新 statusMap，触发 Portal children 重新渲染，从而激活生命周期钩子
-      setStatusMap((prev) => new Map(prev).set(cacheKey, 'inactive'));
+      setStatusMap((prev) => new Map(prev).set(cacheKey, CACHE_STATUS.INACTIVE));
       onDeactivated?.();
-      keepAliveEventBus.emit(cacheKey, 'inactive');
+      keepAliveEventBus.emit(cacheKey, CACHE_STATUS.INACTIVE);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cacheKey]);

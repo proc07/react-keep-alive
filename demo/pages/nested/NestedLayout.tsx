@@ -24,7 +24,7 @@ export default function NestedLayout() {
     const timer = setTimeout(() => {
       console.log('setShowOutlet');
       setShowOutlet(true);
-    }, 2000);
+    }, 200);
     return () => clearTimeout(timer);
   }, []);
 

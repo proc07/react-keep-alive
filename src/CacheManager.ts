@@ -1,4 +1,5 @@
 import type { CacheEntry, EvictionStrategy } from './types';
+import { CACHE_STATUS } from './constants';
 
 /**
  * CacheManager
@@ -94,7 +95,7 @@ export class CacheManager {
   activate(key: string): void {
     const entry = this._cache.get(key);
     if (entry) {
-      entry.status = 'active';
+      entry.status = CACHE_STATUS.ACTIVE;
       entry.lastActiveTime = Date.now();
     }
   }
@@ -102,7 +103,7 @@ export class CacheManager {
   deactivate(key: string): void {
     const entry = this._cache.get(key);
     if (entry) {
-      entry.status = 'inactive';
+      entry.status = CACHE_STATUS.INACTIVE;
     }
   }
 
@@ -123,7 +124,7 @@ export class CacheManager {
   private _findEvictionTarget(): string | null {
     // 只淘汰 inactive（未激活）的条目，避免淘汰当前正在显示的组件
     const inactiveEntries = Array.from(this._cache.values()).filter(
-      (e) => e.status === 'inactive'
+      (e) => e.status === CACHE_STATUS.INACTIVE
     );
 
     if (inactiveEntries.length === 0) {

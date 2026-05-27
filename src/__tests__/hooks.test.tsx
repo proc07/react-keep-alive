@@ -441,6 +441,83 @@ describe('render counts', () => {
     // not the new location /list!
     expect(deactivatedPathname).toBe('/form');
   });
+
+  it('crashes or reads wrong params on background updates when UNSAFE_RouteContext shielding is missing', async () => {
+    let currentIdInRender: string | undefined = undefined;
+
+    function UserProfile() {
+      const params = useParams<{ id: string }>();
+      const [count, setCount] = useState(0);
+
+      currentIdInRender = params.id;
+      console.log('--- UserProfile render ---', { id: params.id, params });
+
+      React.useEffect(() => {
+        const handler = () => {
+          setCount((c) => c + 1);
+        };
+        window.addEventListener('trigger-update', handler);
+        return () => window.removeEventListener('trigger-update', handler);
+      }, []);
+
+      // We throw a clear error if the route parameters are lost/mismatched
+      if (!params.id) {
+        throw new Error('CRASH_ID_MISSING: params.id is missing in background render!');
+      }
+
+      return <div>User: {params.id} (count: {count})</div>;
+    }
+
+    function App() {
+      const navigate = useNavigate();
+      return (
+        <KeepAliveScope>
+          <button data-testid="to-user-1" onClick={() => navigate('/user/1')}>User 1</button>
+          <button data-testid="to-dashboard" onClick={() => navigate('/dashboard')}>Dashboard</button>
+          <KeepAliveRouteOutlet />
+        </KeepAliveScope>
+      );
+    }
+
+    const router = createMemoryRouter([
+      {
+        path: '/',
+        element: <App />,
+        children: [
+          {
+            path: 'user/:id',
+            element: <UserProfile />,
+            handle: { isKeepalive: true },
+          },
+          {
+            path: 'dashboard',
+            element: <div>Dashboard Page</div>,
+          },
+        ],
+      },
+    ], {
+      initialEntries: ['/user/1'],
+    });
+
+    const { getByTestId } = render(<RouterProvider router={router} />);
+
+    // 1. Verify User 1 is rendered
+    expect(currentIdInRender).toBe('1');
+
+    // 2. Navigate away to /dashboard (UserProfile becomes inactive and suspended)
+    fireEvent.click(getByTestId('to-dashboard'));
+    await new Promise((r) => setTimeout(r, 50));
+
+    // 3. Trigger a background state update while on /dashboard
+    // We expect this to run the render function of UserProfile in the background.
+    // If UNSAFE_RouteContext is NOT shielded:
+    // - UserProfile will read the global route context (which matches /dashboard, i.e. no id).
+    // - So it will throw the CRASH_ID_MISSING error, causing the test to throw.
+    window.dispatchEvent(new Event('trigger-update'));
+    
+    // Wait for the scheduled React render to process
+    await new Promise((r) => setTimeout(r, 50));
+  });
 });
 
 
